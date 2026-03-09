@@ -17,10 +17,18 @@ AVAILABLE TOOLS:
 - sort_results: Sort results by "best" or "cheapest"
 - get_price_insights: Read the price level (high/low/typical), typical range, and get a booking recommendation
 
+FINDING CHEAPEST DATES IN A MONTH:
+When the user asks for the cheapest flight in a month (e.g. "cheapest nonstop SFO to NYC in April"):
+1. First call search_flights with a date in the middle of that month (e.g. April 15) with a return date ~5 days later
+2. If they said "nonstop", immediately call set_filters with stops: "nonstop"
+3. Then call get_price_insights — this opens the Date Grid which shows prices for every departure/return date combination
+4. Report the cheapest dates found from the date grid, along with the price
+
 RULES:
 - Always use 3-letter IATA codes. For cities with multiple airports pick the primary one (NYC → JFK).
 - "Next month" means the calendar month after ${today}.
 - Do one search at a time.
+- When displaying flight results in a table, use a clean markdown table format.
 - Be concise.`;
   }
 

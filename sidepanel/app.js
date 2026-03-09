@@ -11,7 +11,6 @@ const App = (() => {
   // DOM refs
   const messagesEl = document.getElementById('messages');
   const welcomeState = document.getElementById('welcome-state');
-  const welcomeTools = document.getElementById('welcome-tools');
   const messageInput = document.getElementById('message-input');
   const sendBtn = document.getElementById('send-btn');
   const statusText = document.getElementById('status-text');
@@ -47,15 +46,6 @@ const App = (() => {
     toolCount.textContent = count;
     toolBadge.classList.toggle('has-tools', count > 0);
 
-    // Welcome chips
-    welcomeTools.innerHTML = '';
-    for (const tool of registeredTools) {
-      const chip = document.createElement('span');
-      chip.className = 'welcome-tool-chip';
-      chip.textContent = toolDisplayName(tool.name);
-      welcomeTools.appendChild(chip);
-    }
-
     // Settings tools list
     if (!toolsList) return;
     toolsList.innerHTML = '';
@@ -90,15 +80,63 @@ const App = (() => {
   // ── Message Rendering ────────────────────────────────────────────────────
 
   function renderMarkdown(text) {
-    return text
-      .replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) =>
-        `<pre><code class="lang-${lang}">${escapeHtml(code.trim())}</code></pre>`)
+    // First extract code blocks to protect them
+    const codeBlocks = [];
+    let processed = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeBlocks.length;
+      codeBlocks.push(`<pre><code class="lang-${lang}">${escapeHtml(code.trim())}</code></pre>`);
+      return `\x00CB${idx}\x00`;
+    });
+
+    // Extract and render markdown tables
+    const tableBlocks = [];
+    processed = processed.replace(/((?:^\|.+\|[ \t]*$\n?){2,})/gm, (tableStr) => {
+      const rows = tableStr.trim().split('\n').filter(r => r.trim());
+      if (rows.length < 2) return tableStr;
+
+      // Check if second row is a separator row
+      const sepRow = rows[1];
+      if (!/^\|[\s:|-]+\|$/.test(sepRow.trim())) return tableStr;
+
+      const parseRow = (row) => row.replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
+
+      const headers = parseRow(rows[0]);
+      const dataRows = rows.slice(2);
+
+      let html = '<div class="md-table-wrap"><table class="md-table"><thead><tr>';
+      for (const h of headers) html += `<th>${h}</th>`;
+      html += '</tr></thead><tbody>';
+      for (const row of dataRows) {
+        const cells = parseRow(row);
+        html += '<tr>';
+        for (const c of cells) html += `<td>${c}</td>`;
+        html += '</tr>';
+      }
+      html += '</tbody></table></div>';
+
+      const idx = tableBlocks.length;
+      tableBlocks.push(html);
+      return `\x00TB${idx}\x00`;
+    });
+
+    // Inline formatting
+    processed = processed
       .replace(/`([^`]+)`/g, (_, code) => `<code>${escapeHtml(code)}</code>`)
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       .replace(/\n\n/g, '</p><p>')
       .replace(/\n/g, '<br>')
       .replace(/^/, '<p>')
       .replace(/$/, '</p>');
+
+    // Restore code blocks and tables
+    for (let i = 0; i < codeBlocks.length; i++) {
+      processed = processed.replace(`\x00CB${i}\x00`, codeBlocks[i]);
+    }
+    for (let i = 0; i < tableBlocks.length; i++) {
+      processed = processed.replace(`\x00TB${i}\x00`, tableBlocks[i]);
+    }
+
+    return processed;
   }
 
   function escapeHtml(str) {

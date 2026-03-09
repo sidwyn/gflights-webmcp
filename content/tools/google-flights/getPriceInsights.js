@@ -43,34 +43,64 @@ const GetPriceInsightsTool = {
                         WebMCPHelpers.findByAriaLabel('Date grid');
     if (dateGridBtn) {
       WebMCPHelpers.simulateClick(dateGridBtn);
-      await WebMCPHelpers.sleep(1500);
+      await WebMCPHelpers.sleep(2000);
 
-      // Read the grid: look for cells with prices
-      const cells = Array.from(document.querySelectorAll('[role="gridcell"], td'))
-        .filter(el => /\$[\d,]+/.test(el.textContent));
+      // Collect all visible price cells from the grid, navigating forward if needed
+      let allParsed = [];
+      const MAX_PAGES = 3;
 
-      if (cells.length > 0) {
-        // Find cheapest cell
-        const parsed = cells.map(el => {
+      for (let page = 0; page < MAX_PAGES; page++) {
+        const cells = Array.from(document.querySelectorAll('[role="gridcell"], td'))
+          .filter(el => /\$[\d,]+/.test(el.textContent));
+
+        for (const el of cells) {
           const priceMatch = el.textContent.match(/\$[\d,]+/);
-          const price = priceMatch ? parseInt(priceMatch[0].replace(/[$,]/g, ''), 10) : Infinity;
-          // Try to get date context from nearby elements
+          if (!priceMatch) continue;
+          const price = parseInt(priceMatch[0].replace(/[$,]/g, ''), 10);
+          if (price >= 100000) continue; // skip absurd values
           const ariaLabel = el.getAttribute('aria-label') || el.textContent.trim();
-          return { price, label: ariaLabel };
-        }).filter(c => c.price < Infinity);
+          // Deduplicate by label
+          if (!allParsed.some(p => p.label === ariaLabel)) {
+            allParsed.push({ price, label: ariaLabel });
+          }
+        }
 
-        if (parsed.length > 0) {
-          parsed.sort((a, b) => a.price - b.price);
-          const cheapest = parsed[0];
-          dateGridInfo = `Cheapest date found: $${cheapest.price.toLocaleString()} (${cheapest.label})`;
+        // Try to navigate to next week/page in the grid
+        if (page < MAX_PAGES - 1) {
+          const nextBtn = document.querySelector('[aria-label="Next"]') ||
+                          document.querySelector('[aria-label="Show later dates"]') ||
+                          Array.from(document.querySelectorAll('button')).find(b =>
+                            b.querySelector('svg') && b.closest('[role="grid"], [role="table"]')?.parentElement?.contains(b) &&
+                            /next|forward|right|later/i.test(b.getAttribute('aria-label') || '')
+                          );
+          // Also try generic forward arrow buttons near the grid
+          const forwardBtns = Array.from(document.querySelectorAll('button[aria-label]'))
+            .filter(b => /next|forward|later/i.test(b.getAttribute('aria-label')));
+          const btn = nextBtn || forwardBtns[forwardBtns.length - 1];
+          if (btn && !btn.disabled) {
+            WebMCPHelpers.simulateClick(btn);
+            await WebMCPHelpers.sleep(1500);
+          } else {
+            break;
+          }
         }
       }
 
-      // Switch back to list view
-      const listBtn = WebMCPHelpers.findByText('List') ||
-                      WebMCPHelpers.findByAriaLabel('List view');
-      if (listBtn) {
-        WebMCPHelpers.simulateClick(listBtn);
+      if (allParsed.length > 0) {
+        allParsed.sort((a, b) => a.price - b.price);
+        const top5 = allParsed.slice(0, 5);
+        dateGridInfo = 'Cheapest dates from the date grid:\n' +
+          top5.map((c, i) => `  ${i + 1}. $${c.price.toLocaleString()} — ${c.label}`).join('\n');
+      }
+
+      // Close the date grid dialog
+      const cancelBtn = WebMCPHelpers.findByText('Cancel', 'button') ||
+                        WebMCPHelpers.findByText('Close', 'button');
+      if (cancelBtn) {
+        WebMCPHelpers.simulateClick(cancelBtn);
+        await WebMCPHelpers.sleep(500);
+      } else {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
         await WebMCPHelpers.sleep(500);
       }
     }
