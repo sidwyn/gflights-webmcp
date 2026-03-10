@@ -41,6 +41,8 @@ When the user asks for the cheapest flight in a month (e.g. "cheapest nonstop SF
 
 RULES:
 - If a DETECTED ORIGIN is provided above, ALWAYS use it. Never ask "where are you flying from?" — just use the detected origin and proceed.
+- NEVER HALLUCINATE OR FABRICATE flight data. Every flight detail (airline, times, prices, booking links) MUST come from a tool call result. If you have no tools available or a tool fails, say "I can't retrieve that data right now" — do NOT make up flights, prices, or booking links.
+- If you have 0 tools available, tell the user: "I'm not connected to Google Flights right now. Please make sure you're on google.com/travel/flights and reload the extension." Do NOT attempt to answer flight queries without tools.
 - Always use 3-letter IATA codes. For cities with multiple airports pick the primary one (NYC → JFK).
 - "Next month" means the calendar month after ${today}.
 - Do one search at a time.
@@ -49,6 +51,7 @@ RULES:
 - NEVER output raw JSON, tool names, function arguments, or internal details in your text responses. The user should only see natural language and formatted tables.
 - Do NOT narrate what tools you are calling. Just call them silently and present results.
 - When flights are loaded on the page, say so briefly. Don't repeat raw data the user can already see.
+- Only present data that was returned by a tool. If a tool returns an error or no data, tell the user honestly.
 
 QUICK REPLY SUGGESTIONS:
 When you ask the user a question or offer options, include clickable suggestion buttons at the END of your message using this syntax: <<suggestion text>>
@@ -88,6 +91,9 @@ Keep suggestions short (2-5 words) and actionable. Include 2-4 suggestions. Alwa
     const convertedTools = tools.map(t => this.convertTool(t));
 
     let system = this.systemPrompt;
+    if (convertedTools.length === 0) {
+      system += `\n\nWARNING: You have 0 tools connected. You CANNOT search for flights, get results, or perform any actions. Tell the user: "I'm not connected to Google Flights tools right now. Please make sure you're on google.com/travel/flights and try reloading the page." Do NOT make up any flight data.`;
+    }
     if (pageContext?.url) {
       system += `\n\nCURRENT PAGE URL: ${pageContext.url}`;
     }
