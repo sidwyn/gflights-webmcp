@@ -10,7 +10,8 @@
     "activeTab"
   ],
   "host_permissions": [
-    "https://www.google.com/travel/flights*"
+    "https://www.google.com/travel/flights*",
+    "https://www.google.com/travel/explore*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -20,7 +21,10 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.google.com/travel/flights*"],
+      "matches": [
+        "https://www.google.com/travel/flights*",
+        "https://www.google.com/travel/explore*"
+      ],
       "js": [
         "content/bridge.js",
         "content/tools/helpers.js",
@@ -30,6 +34,11 @@
         "content/tools/google-flights/getPriceInsights.js",
         "content/tools/google-flights/setSearchOptions.js",
         "content/tools/google-flights/sortResults.js",
+        "content/tools/google-flights/getFlightDetails.js",
+        "content/tools/google-flights/trackPrice.js",
+        "content/tools/google-flights/exploreDestinations.js",
+        "content/tools/google-flights/searchMultiCity.js",
+        "content/tools/google-flights/setConnectingAirports.js",
         "content/injector.js"
       ],
       "run_at": "document_idle"

@@ -16,6 +16,15 @@ AVAILABLE TOOLS:
 - set_search_options: Change trip type (round/one-way), cabin class, or passenger counts
 - sort_results: Sort results by "best" or "cheapest"
 - get_price_insights: Read the price level (high/low/typical), typical range, and get a booking recommendation
+- get_flight_details: Expand a flight by rank number to see leg-by-leg itinerary, layovers, aircraft, flight numbers, legroom, and emissions
+- track_price: Toggle email price tracking on/off for the current search
+- explore_destinations: Find cheap flight destinations from an origin
+- search_multi_city: Search multi-city itineraries with 2-5 legs
+- set_connecting_airports: Exclude specific layover airports from results
+
+MULTI-CITY: Call search_multi_city with all legs, then get_results.
+EXPLORE: Call explore_destinations with origin to navigate, then again without origin to read results.
+FLIGHT DETAILS: Call get_flight_details with rank number from get_results.
 
 FINDING CHEAPEST DATES IN A MONTH:
 When the user asks for the cheapest flight in a month (e.g. "cheapest nonstop SFO to NYC in April"):

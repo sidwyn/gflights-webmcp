@@ -22,12 +22,17 @@ const App = (() => {
   // ── Tool Name Formatting ──────────────────────────────────────────────────
 
   const TOOL_DISPLAY_NAMES = {
-    search_flights:     'Search Flights',
-    get_results:        'Get Results',
-    set_filters:        'Set Filters',
-    set_search_options: 'Search Options',
-    sort_results:       'Sort Results',
-    get_price_insights: 'Price Insights'
+    search_flights:           'Search Flights',
+    get_results:              'Get Results',
+    set_filters:              'Set Filters',
+    set_search_options:       'Search Options',
+    sort_results:             'Sort Results',
+    get_price_insights:       'Price Insights',
+    get_flight_details:       'Flight Details',
+    track_price:              'Track Price',
+    explore_destinations:     'Explore Destinations',
+    search_multi_city:        'Multi-City Search',
+    set_connecting_airports:  'Connecting Airports'
   };
 
   function toolDisplayName(name) {

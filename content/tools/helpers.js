@@ -203,6 +203,47 @@ const WebMCPHelpers = (() => {
     slider.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
+  /**
+   * Simulate typing into a Google Flights combobox input (triggers autocomplete).
+   * Clears existing value, types text character by character, waits for
+   * autocomplete dropdown, and selects the first suggestion.
+   */
+  async function simulateTyping(input, text) {
+    input.focus();
+    input.dispatchEvent(new Event('focusin', { bubbles: true }));
+
+    // Clear existing value using native setter (React-compatible)
+    const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value');
+    const setValue = (el, val) => {
+      if (nativeSetter?.set) nativeSetter.set.call(el, val);
+      else el.value = val;
+    };
+
+    setValue(input, '');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await sleep(200);
+
+    // Type characters one by one
+    for (const char of text) {
+      const current = input.value || '';
+      setValue(input, current + char);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: char, bubbles: true }));
+      await sleep(50);
+    }
+    await sleep(1000); // Wait for autocomplete dropdown
+
+    // Select first autocomplete option
+    const option = document.querySelector('[role="option"]') ||
+                   document.querySelector('[role="listbox"] li');
+    if (option) {
+      simulateClick(option);
+      await sleep(300);
+      return true;
+    }
+    return false;
+  }
+
   function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
@@ -216,6 +257,7 @@ const WebMCPHelpers = (() => {
     simulateClick,
     parseGoogleFlightCard,
     setSliderValue,
+    simulateTyping,
     sleep
   };
 })();
