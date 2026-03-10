@@ -26,6 +26,11 @@ Built on the [WebMCP](https://github.com/anthropics/webmcp) standard: tools are 
 - **Markdown tables** — flight results render as clean, formatted tables
 - **Dark mode** — adapts to your system theme with a clean dark palette
 - **Multi-model** — works with Claude (Anthropic) or GPT-4o (OpenAI)
+- **Flight details** — "Tell me more about flight #3" — see leg-by-leg itinerary, aircraft, legroom, emissions
+- **Price tracking** — Get email alerts when prices change for your search
+- **Explore destinations** — "Where can I fly for cheap?" — browse the cheapest destinations on a map
+- **Multi-city search** — Complex itineraries like SFO→Tokyo→Bangkok→SFO
+- **Connecting airport filter** — Exclude specific layover airports
 
 ---
 
@@ -62,6 +67,11 @@ All tools are registered via `window.__webmcpRegistry` and available to the AI o
 | `set_filters` | Results page | Apply filters: stops, max price, airlines, times, duration, bags |
 | `sort_results` | Results page | Sort results by Best or Cheapest |
 | `get_price_insights` | Results page | Read price level, typical range, scan date grid for cheapest dates, and recommend whether to book now |
+| `get_flight_details` | Results page | Expand a flight to see detailed segment info: layovers, aircraft, flight numbers, legroom, emissions |
+| `track_price` | Results page | Toggle email price tracking for specific dates or any dates |
+| `explore_destinations` | All pages | Navigate to Explore map and read cheapest destinations from an origin |
+| `search_multi_city` | All pages | Search multi-city itineraries with 2-5 legs |
+| `set_connecting_airports` | Results page | Exclude specific connecting/layover airports from results |
 
 ---
 
