@@ -16,11 +16,15 @@ Built on the [WebMCP](https://github.com/anthropics/webmcp) standard: tools are 
 ## Features
 
 - **Natural language search** — "Cheapest nonstop from SFO to NYC in April"
+- **Smart origin detection** — automatically reads your departure airport from the Google Flights page
 - **Full filter control** — stops, price cap, airlines, departure/arrival times, duration, bags
 - **Trip options** — round trip / one-way, cabin class, passenger counts
 - **Sort results** — Best or Cheapest
-- **Price insights** — reads the price history chart and recommends whether to book now or wait
+- **Price insights & date grid** — reads the price history, scans the date grid across multiple pages, and finds the cheapest dates in a month
 - **Anywhere search** — "Find me the cheapest flight from SFO next month"
+- **Quick reply suggestions** — clickable buttons for common follow-up actions (e.g. "Filter nonstop", "Sort by cheapest")
+- **Markdown tables** — flight results render as clean, formatted tables
+- **Dark mode** — adapts to your system theme with a clean dark palette
 - **Multi-model** — works with Claude (Anthropic) or GPT-4o (OpenAI)
 
 ---
@@ -57,7 +61,7 @@ All tools are registered via `window.__webmcpRegistry` and available to the AI o
 | `get_results` | Results page | Read the current flight listings from the results page |
 | `set_filters` | Results page | Apply filters: stops, max price, airlines, times, duration, bags |
 | `sort_results` | Results page | Sort results by Best or Cheapest |
-| `get_price_insights` | Results page | Read price level and typical range; recommend whether to book now |
+| `get_price_insights` | Results page | Read price level, typical range, scan date grid for cheapest dates, and recommend whether to book now |
 
 ---
 
