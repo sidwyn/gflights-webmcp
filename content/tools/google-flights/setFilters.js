@@ -159,30 +159,43 @@ const SetFiltersTool = {
       if (opened) {
         await WebMCPHelpers.sleep(400);
 
-        // Find all airline option elements (labeled checkboxes or list items)
-        const items = Array.from(document.querySelectorAll(
-          '[role="listitem"], [role="option"], [role="checkbox"], label'
-        )).filter(el => {
-          const t = el.textContent.trim();
-          return t.length > 2 && t.length < 60 && !t.includes('$') && !/^\d/.test(t);
-        });
-
+        // Google Flights uses input[type="checkbox"] with label[for="id"].
+        // Airlines are checked by default; alliances are unchecked.
+        // To show ONLY wanted airlines: uncheck all unwanted, ensure wanted stay checked.
+        const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]'));
         let found = 0;
-        for (const item of items) {
-          const name = item.textContent.trim().toLowerCase();
-          const checkbox = item.querySelector('input[type="checkbox"]') ||
-                           (item.getAttribute('role') === 'checkbox' ? item : null);
-          const isWanted = wantedAirlines.some(a => name.includes(a));
+        let unchecked = 0;
+
+        for (const cb of checkboxes) {
+          // Get airline name from the associated label
+          const label = cb.id ? document.querySelector(`label[for="${cb.id}"]`) : null;
+          const name = (label?.textContent?.trim() || '').toLowerCase();
+          if (!name || name.length < 2) continue;
+
+          // Skip alliance entries (Oneworld, SkyTeam, Star Alliance) — only handle airlines
+          if (/^(oneworld|skyteam|star alliance)$/i.test(name)) continue;
+
+          const isWanted = wantedAirlines.some(a => name.includes(a) || a.includes(name));
 
           if (isWanted) {
-            WebMCPHelpers.simulateClick(checkbox || item);
-            await WebMCPHelpers.sleep(100);
             found++;
+            // Ensure it's checked
+            if (!cb.checked) {
+              WebMCPHelpers.simulateClick(label || cb);
+              await WebMCPHelpers.sleep(100);
+            }
+          } else {
+            // Uncheck unwanted airlines
+            if (cb.checked) {
+              WebMCPHelpers.simulateClick(label || cb);
+              await WebMCPHelpers.sleep(100);
+              unchecked++;
+            }
           }
         }
 
         actions.push(found > 0
-          ? `Filtered to airlines: ${args.airlines}`
+          ? `Filtered to airlines: ${args.airlines} (deselected ${unchecked} other airline${unchecked !== 1 ? 's' : ''})`
           : `WARNING: Could not find airline checkboxes for: ${args.airlines}`);
 
         await closePanel();
