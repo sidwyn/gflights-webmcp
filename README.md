@@ -146,5 +146,5 @@ MIT — see [LICENSE](LICENSE)
 ---
 
 <!-- LAST_UPDATED -->
-_Last updated: 2026-03-09_
+_Last updated: 2026-03-10_
 <!-- /LAST_UPDATED -->

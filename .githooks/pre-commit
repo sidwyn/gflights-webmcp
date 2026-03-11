@@ -1,8 +1,18 @@
 #!/usr/bin/env bash
 # .githooks/pre-commit
-# Updates the "Last updated" timestamp in README.md before each commit.
+# 1. Runs tests to prevent broken commits
+# 2. Updates the "Last updated" timestamp in README.md
 
 set -e
+
+# ── Run tests ──────────────────────────────────────────────────────────────
+echo "pre-commit: Running tests..."
+if ! npm test 2>&1; then
+  echo ""
+  echo "pre-commit: ❌ Tests failed. Fix failing tests before committing."
+  exit 1
+fi
+echo "pre-commit: ✅ All tests passed."
 
 README="README.md"
 
