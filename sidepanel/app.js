@@ -464,10 +464,11 @@ const App = (() => {
       }
     }
 
-    // Refresh page context right before the agent runs
-    pageContext = await fetchPageContext();
+    // Pin the target tab so switching tabs mid-stream doesn't break tool calls
+    const targetTabId = await getActiveTabId();
+    pageContext = await fetchPageContext(targetTabId);
 
-    await runAgentLoop(provider);
+    await runAgentLoop(provider, targetTabId);
 
     saveConversation();
 
@@ -479,15 +480,30 @@ const App = (() => {
     setTimeout(() => messageInput.focus(), 50);
   }
 
-  function fetchPageContext() {
+  function getActiveTabId() {
     return new Promise(resolve => {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (!tabs[0]) { resolve({}); return; }
-        chrome.tabs.sendMessage(tabs[0].id, { type: 'GET_PAGE_CONTEXT' }, (response) => {
+        resolve(tabs[0]?.id || null);
+      });
+    });
+  }
+
+  function fetchPageContext(tabId) {
+    return new Promise(resolve => {
+      if (!tabId) {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (!tabs[0]) { resolve({}); return; }
+          chrome.tabs.sendMessage(tabs[0].id, { type: 'GET_PAGE_CONTEXT' }, (response) => {
+            if (chrome.runtime.lastError) { resolve({}); return; }
+            resolve(response?.pageContext || {});
+          });
+        });
+      } else {
+        chrome.tabs.sendMessage(tabId, { type: 'GET_PAGE_CONTEXT' }, (response) => {
           if (chrome.runtime.lastError) { resolve({}); return; }
           resolve(response?.pageContext || {});
         });
-      });
+      }
     });
   }
 
@@ -513,7 +529,7 @@ const App = (() => {
     });
   }
 
-  async function runAgentLoop(provider) {
+  async function runAgentLoop(provider, targetTabId) {
     let iteration = 0;
     const maxIterations = 10;
 
@@ -578,7 +594,7 @@ const App = (() => {
 
         let result;
         try {
-          result = await executeToolViaContentScript(toolName, args);
+          result = await executeToolViaContentScript(toolName, args, targetTabId);
           updateToolCallCard(card, { args, result });
         } catch (e) {
           updateToolCallCard(card, { args, result: null, error: e.message });
@@ -594,7 +610,7 @@ const App = (() => {
 
   // ── Tool Execution Bridge ─────────────────────────────────────────────────
 
-  async function executeToolViaContentScript(toolName, args) {
+  async function executeToolViaContentScript(toolName, args, pinnedTabId) {
     const TOTAL_TIMEOUT = 35000;
     const RETRY_INTERVAL = 800;
     const start = Date.now();
@@ -602,42 +618,48 @@ const App = (() => {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error(`Tool ${toolName} timed out`)), TOTAL_TIMEOUT);
 
-      function attempt() {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          if (!tabs[0]) {
-            clearTimeout(timeout);
-            reject(new Error('No active tab'));
-            return;
-          }
-
-          chrome.tabs.sendMessage(tabs[0].id, {
-            type: 'EXECUTE_TOOL',
-            toolName,
-            args
-          }, (response) => {
-            if (chrome.runtime.lastError) {
-              const msg = chrome.runtime.lastError.message || '';
-              // Content script not yet loaded (page still navigating) — retry
-              if (msg.includes('Receiving end does not exist') || msg.includes('Could not establish connection')) {
-                if (Date.now() - start < TOTAL_TIMEOUT - RETRY_INTERVAL) {
-                  setTimeout(attempt, RETRY_INTERVAL);
-                } else {
-                  clearTimeout(timeout);
-                  reject(new Error(msg));
-                }
+      function sendToTab(id) {
+        chrome.tabs.sendMessage(id, {
+          type: 'EXECUTE_TOOL',
+          toolName,
+          args
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            const msg = chrome.runtime.lastError.message || '';
+            if (msg.includes('Receiving end does not exist') || msg.includes('Could not establish connection')) {
+              if (Date.now() - start < TOTAL_TIMEOUT - RETRY_INTERVAL) {
+                setTimeout(attempt, RETRY_INTERVAL);
               } else {
                 clearTimeout(timeout);
                 reject(new Error(msg));
               }
-            } else if (response?.error) {
-              clearTimeout(timeout);
-              reject(new Error(response.error));
             } else {
               clearTimeout(timeout);
-              resolve(response?.result);
+              reject(new Error(msg));
             }
-          });
+          } else if (response?.error) {
+            clearTimeout(timeout);
+            reject(new Error(response.error));
+          } else {
+            clearTimeout(timeout);
+            resolve(response?.result);
+          }
         });
+      }
+
+      function attempt() {
+        if (pinnedTabId) {
+          sendToTab(pinnedTabId);
+        } else {
+          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (!tabs[0]) {
+              clearTimeout(timeout);
+              reject(new Error('No active tab'));
+              return;
+            }
+            sendToTab(tabs[0].id);
+          });
+        }
       }
 
       attempt();
