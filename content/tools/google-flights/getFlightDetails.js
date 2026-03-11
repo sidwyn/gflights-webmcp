@@ -212,7 +212,7 @@ const GetFlightDetailsTool = {
 
     if (segments.length === 0) {
       output += 'Could not parse segment details from the expanded card.\n';
-      output += `\nRaw detail text (first 2000 chars):\n${detailText.substring(0, 2000)}\n`;
+      output += `\nRaw detail text (first 500 chars):\n${detailText.substring(0, 500)}\n`;
     } else {
       segments.forEach((seg, idx) => {
         output += `Segment ${idx + 1}:\n`;

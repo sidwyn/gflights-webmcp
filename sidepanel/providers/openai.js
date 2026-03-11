@@ -1,9 +1,9 @@
 // sidepanel/providers/openai.js — OpenAI integration
 
 class OpenAIProvider extends BaseLLMProvider {
-  constructor(apiKey) {
+  constructor(apiKey, model) {
     super(apiKey);
-    this.model = 'gpt-4o'; // Update to ChatGPT 5.4 when available
+    this.model = model || 'gpt-4o';
     const today = new Date().toISOString().split('T')[0];
     this.systemPrompt = `You are a flight search assistant inside a Chrome extension for Google Flights. Today's date is ${today}.
 
@@ -30,7 +30,7 @@ EXPLORE: Call explore_destinations with origin (and optionally month, tripLength
 FLIGHT DETAILS: Call get_flight_details with rank number from get_results.
 BOOKING: Call get_booking_link with rank to get booking URLs. Always include the URL in your response.
 RETURN FLIGHTS: After selecting a departing flight, call select_return_flight to list/select returns.
-TRACKED FLIGHTS: Call get_tracked_flights to navigate to saved flights, then again to read the list.
+TRACKED FLIGHTS: ONLY when the user EXPLICITLY asks about tracked/saved flights. Call get_tracked_flights to navigate, then again to read. NEVER call this during a search or booking flow — it navigates away from results.
 
 FINDING CHEAPEST DATES IN A MONTH:
 When the user asks for the cheapest flight in a month (e.g. "cheapest nonstop SFO to NYC in April"):

@@ -1,9 +1,9 @@
 // sidepanel/providers/anthropic.js — Claude integration via Messages API
 
 class AnthropicProvider extends BaseLLMProvider {
-  constructor(apiKey) {
+  constructor(apiKey, model) {
     super(apiKey);
-    this.model = 'claude-opus-4-6';
+    this.model = model || 'claude-sonnet-4-6';
     const today = new Date().toISOString().split('T')[0];
     this.systemPrompt = `You are a flight search assistant inside a Chrome extension for Google Flights. Today's date is ${today}.
 
@@ -57,9 +57,10 @@ For round-trip searches, after the user selects a departing flight:
 2. When the user picks one, call select_return_flight with action "select" and the rank
 
 TRACKED FLIGHTS:
-When the user asks about their tracked flights, saved alerts, or price history:
+ONLY when the user EXPLICITLY asks to see their tracked/saved flights or price alerts:
 1. Call get_tracked_flights to navigate to saved flights
 2. Call get_tracked_flights again to read the list
+NEVER call get_tracked_flights as part of a search or booking flow — it navigates away from results.
 
 FINDING CHEAPEST DATES IN A MONTH:
 When the user asks for the cheapest flight in a month (e.g. "cheapest nonstop SFO to NYC in April"):

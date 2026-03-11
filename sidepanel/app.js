@@ -137,6 +137,12 @@ const App = (() => {
       return `\x00TB${idx}\x00`;
     });
 
+    // Headings (### before ## before #)
+    processed = processed
+      .replace(/^###\s+(.+)$/gm, '<h3>$1</h3>')
+      .replace(/^##\s+(.+)$/gm, '<h2>$1</h2>')
+      .replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
+
     // Inline formatting
     processed = processed
       .replace(/`([^`]+)`/g, (_, code) => `<code>${escapeHtml(code)}</code>`)
@@ -381,16 +387,106 @@ const App = (() => {
 
   async function getProvider() {
     const saved = await Settings.load();
-    const providerName = modelSelector.selectedOptions[0]?.dataset.provider;
+    const selectedOption = modelSelector.selectedOptions[0];
+    const providerName = selectedOption?.dataset.provider;
+    const modelId = selectedOption?.value;
 
     if (providerName === 'anthropic') {
       if (!saved.anthropicKey) throw new Error('Anthropic API key not set. Open Settings to add it.');
-      return new AnthropicProvider(saved.anthropicKey);
+      return new AnthropicProvider(saved.anthropicKey, modelId);
     } else if (providerName === 'openai') {
       if (!saved.openaiKey) throw new Error('OpenAI API key not set. Open Settings to add it.');
-      return new OpenAIProvider(saved.openaiKey);
+      return new OpenAIProvider(saved.openaiKey, modelId);
     }
     throw new Error('Unknown provider selected.');
+  }
+
+  // ── Token Management ─────────────────────────────────────────────────────
+
+  // Cap a tool result before it enters conversation history
+  function capToolResult(result, maxLen) {
+    if (typeof result === 'string') {
+      return result.length > maxLen ? result.slice(0, maxLen) + '…' : result;
+    }
+    if (result?.content && Array.isArray(result.content)) {
+      return {
+        ...result,
+        content: result.content.map(c => {
+          if (c.type === 'text' && c.text && c.text.length > maxLen) {
+            return { ...c, text: c.text.slice(0, maxLen) + '…' };
+          }
+          return c;
+        })
+      };
+    }
+    return result;
+  }
+
+  // Truncate old messages to stay under API rate limits.
+  // Keep the last KEEP_RECENT messages intact; older tool results get summarized.
+  function trimmedHistory() {
+    const KEEP_RECENT = 6;           // Keep last N messages with full content
+    const MAX_TOOL_RESULT_LEN = 150; // Truncate older tool results to this many chars
+    const DROP_BEYOND = 20;          // Drop tool results entirely beyond this many messages back
+
+    if (conversationHistory.length <= KEEP_RECENT) return conversationHistory;
+
+    return conversationHistory.reduce((acc, msg, idx) => {
+      const age = conversationHistory.length - idx;
+      const isRecent = age <= KEEP_RECENT;
+
+      if (isRecent) { acc.push(msg); return acc; }
+
+      // Very old tool results: drop entirely (keep the message shell for API validity)
+      const isVeryOld = age > DROP_BEYOND;
+
+      // Anthropic format: role=user with tool_result blocks
+      if (msg.role === 'user' && Array.isArray(msg.content)) {
+        const trimmed = msg.content.map(block => {
+          if (block.type === 'tool_result' && Array.isArray(block.content)) {
+            if (isVeryOld) return { ...block, content: [{ type: 'text', text: '[old result removed]' }] };
+            const fullText = block.content.map(c => c.text || '').join(' ');
+            if (fullText.length > MAX_TOOL_RESULT_LEN) {
+              return { ...block, content: [{ type: 'text', text: fullText.slice(0, MAX_TOOL_RESULT_LEN) + '…' }] };
+            }
+          }
+          return block;
+        });
+        acc.push({ ...msg, content: trimmed });
+        return acc;
+      }
+
+      // OpenAI format: role=tool
+      if (msg.role === 'tool' && typeof msg.content === 'string') {
+        if (isVeryOld) { acc.push({ ...msg, content: '[old result removed]' }); return acc; }
+        if (msg.content.length > MAX_TOOL_RESULT_LEN) {
+          acc.push({ ...msg, content: msg.content.slice(0, MAX_TOOL_RESULT_LEN) + '…' });
+          return acc;
+        }
+      }
+
+      // Truncate old assistant text too (e.g. long flight summaries)
+      if (msg.role === 'assistant' && !isRecent) {
+        if (typeof msg.content === 'string' && msg.content.length > 300) {
+          acc.push({ ...msg, content: msg.content.slice(0, 300) + '…' });
+          return acc;
+        }
+        // Anthropic assistant format: array of content blocks
+        if (Array.isArray(msg.content)) {
+          const trimmedContent = msg.content.map(block => {
+            if (block.type === 'text' && block.text && block.text.length > 300) {
+              return { ...block, text: block.text.slice(0, 300) + '…' };
+            }
+            return block;
+          });
+          acc.push({ ...msg, content: trimmedContent });
+          return acc;
+        }
+      }
+
+      acc.push(msg);
+      return acc;
+    }, []);
   }
 
   // ── Conversation History Helpers ─────────────────────────────────────────
@@ -545,7 +641,7 @@ const App = (() => {
 
       await new Promise(resolve => {
         provider.streamMessage(
-          conversationHistory,
+          trimmedHistory(),
           getActiveTools(),
           pageContext,
           {
@@ -601,7 +697,9 @@ const App = (() => {
           result = { content: [{ type: 'text', text: `ERROR: ${e.message}` }] };
         }
 
-        conversationHistory.push(provider.formatToolResult(toolUseId, result));
+        // Cap tool result size before adding to history to control token usage
+        const cappedResult = capToolResult(result, 1500);
+        conversationHistory.push(provider.formatToolResult(toolUseId, cappedResult));
       }
     }
 

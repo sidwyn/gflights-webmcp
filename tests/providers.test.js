@@ -11,8 +11,13 @@ describe('AnthropicProvider', () => {
   const provider = new globalThis.AnthropicProvider('test-key');
 
   describe('constructor', () => {
-    it('sets model to claude-opus-4-6', () => {
-      expect(provider.model).toBe('claude-opus-4-6');
+    it('defaults model to claude-sonnet-4-6', () => {
+      expect(provider.model).toBe('claude-sonnet-4-6');
+    });
+
+    it('accepts a custom model', () => {
+      const custom = new globalThis.AnthropicProvider('test-key', 'claude-opus-4-6');
+      expect(custom.model).toBe('claude-opus-4-6');
     });
 
     it('sets API key', () => {
@@ -78,8 +83,13 @@ describe('OpenAIProvider', () => {
   const provider = new globalThis.OpenAIProvider('test-key');
 
   describe('constructor', () => {
-    it('sets model to gpt-4o', () => {
+    it('defaults model to gpt-4o', () => {
       expect(provider.model).toBe('gpt-4o');
+    });
+
+    it('accepts a custom model', () => {
+      const custom = new globalThis.OpenAIProvider('test-key', 'gpt-4o-mini');
+      expect(custom.model).toBe('gpt-4o-mini');
     });
 
     it('system prompt contains anti-hallucination rules', () => {

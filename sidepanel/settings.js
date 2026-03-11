@@ -14,7 +14,7 @@ const Settings = (() => {
         resolve({
           anthropicKey: items[STORAGE_KEYS.anthropicKey] || '',
           openaiKey: items[STORAGE_KEYS.openaiKey] || '',
-          selectedModel: items[STORAGE_KEYS.selectedModel] || 'claude-opus-4-6',
+          selectedModel: items[STORAGE_KEYS.selectedModel] || 'claude-sonnet-4-6',
           disabledTools: items[STORAGE_KEYS.disabledTools] || []
         });
       });
