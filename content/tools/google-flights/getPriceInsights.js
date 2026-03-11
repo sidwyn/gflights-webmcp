@@ -130,12 +130,12 @@ const GetPriceInsightsTool = {
         }
       }
 
-      // Close the date grid dialog
-      const okBtn = WebMCPHelpers.findByText('OK', 'button') ||
-                    WebMCPHelpers.findByText('Cancel', 'button') ||
-                    WebMCPHelpers.findByText('Close', 'button');
-      if (okBtn) {
-        WebMCPHelpers.simulateClick(okBtn);
+      // Close the date grid dialog — MUST use Cancel, NOT OK.
+      // Clicking OK confirms the selected dates and navigates away from the departing page.
+      const cancelBtn = WebMCPHelpers.findByText('Cancel', 'button') ||
+                        WebMCPHelpers.findByText('Close', 'button');
+      if (cancelBtn) {
+        WebMCPHelpers.simulateClick(cancelBtn);
         await WebMCPHelpers.sleep(500);
       } else {
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
