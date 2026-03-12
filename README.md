@@ -30,6 +30,81 @@ Want to add a site? See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
+## How it uses WebMCP
+
+[WebMCP](https://github.com/webmachinelearning/webmcp) is a proposed Web API that lets web pages expose JavaScript tools to AI agents. The spec defines `window.navigator.modelContext.registerTool()` for pages to declare callable functions with structured schemas — so agents can interact with sites programmatically instead of scraping UI.
+
+Since no browser ships this API yet, this extension acts as a polyfill. Each site module registers tools on a `window.__webmcpRegistry` object that mirrors the spec's tool shape:
+
+```js
+registry.register({
+  name: 'search_flights',
+  description: 'Search for flights on Google Flights',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      origin: { type: 'string', description: 'Departure airport IATA code' },
+      destination: { type: 'string', description: 'Arrival airport IATA code' },
+      // ...
+    },
+    required: ['origin', 'departureDate']
+  },
+  execute: async (args) => {
+    // Interact with the page DOM
+    return { content: [{ type: 'text', text: 'Results loaded.' }] };
+  }
+});
+```
+
+Tools use `name`, `description`, `inputSchema` (JSON Schema), and an `execute` callback that returns MCP-compatible `{ content: [{ type, text }] }` responses — matching the spec exactly. When browsers eventually ship native `modelContext`, adding a thin bridge layer is all that's needed.
+
+---
+
+## Architecture
+
+```
+webmcp-tool-library/
+├── manifest.json                          # Extension manifest (no static content_scripts)
+├── background.js                          # SITE_MODULES registry + programmatic registration
+├── content/
+│   ├── bridge.js                          # Generic registry + messaging bridge
+│   ├── helpers.js                         # Generic DOM helpers (sleep, findByText, etc.)
+│   └── sites/
+│       ├── google-flights/                # First site module
+│       │   ├── helpers.js                 # Site-specific DOM helpers
+│       │   ├── injector.js                # Tool registration + page context
+│       │   ├── prompt.js                  # AI system prompt fragment
+│       │   └── tools/                     # 14 tool files
+│       │       ├── searchFlights.js
+│       │       ├── getResults.js
+│       │       └── ...
+│       └── _template/                     # Skeleton for new site modules
+├── sidepanel/
+│   ├── index.html
+│   ├── app.js                             # Chat UI + agent loop
+│   ├── settings.js
+│   ├── styles.css
+│   └── providers/
+│       ├── base.js
+│       ├── anthropic.js
+│       └── openai.js
+├── tests/
+├── CONTRIBUTING.md
+└── icons/
+```
+
+### How it works
+
+1. `background.js` registers content scripts programmatically for each site in `SITE_MODULES`
+2. When you visit a supported site, the content scripts load: `bridge.js` → `helpers.js` → site helpers → tools → prompt → injector
+3. The injector registers tools with `window.__webmcpRegistry` based on the current page
+4. The side panel connects to the registry, fetches tools, and passes them to the AI provider
+5. The AI calls tools via message passing — bridge executes them in the page context
+
+Adding a new site = one entry in `SITE_MODULES` + one folder under `content/sites/`.
+
+---
+
 ## Features
 
 ### Platform
@@ -80,51 +155,6 @@ Add your API key in the extension's Settings panel:
 - **OpenAI** — get a key at [platform.openai.com](https://platform.openai.com)
 
 Keys are stored locally in `chrome.storage.local` and never leave your browser except to call the respective API.
-
----
-
-## Architecture
-
-```
-webmcp-tool-library/
-├── manifest.json                          # Extension manifest (no static content_scripts)
-├── background.js                          # SITE_MODULES registry + programmatic registration
-├── content/
-│   ├── bridge.js                          # Generic registry + messaging bridge
-│   ├── helpers.js                         # Generic DOM helpers (sleep, findByText, etc.)
-│   └── sites/
-│       ├── google-flights/                # First site module
-│       │   ├── helpers.js                 # Site-specific DOM helpers
-│       │   ├── injector.js                # Tool registration + page context
-│       │   ├── prompt.js                  # AI system prompt fragment
-│       │   └── tools/                     # 14 tool files
-│       │       ├── searchFlights.js
-│       │       ├── getResults.js
-│       │       └── ...
-│       └── _template/                     # Skeleton for new site modules
-├── sidepanel/
-│   ├── index.html
-│   ├── app.js                             # Chat UI + agent loop
-│   ├── settings.js
-│   ├── styles.css
-│   └── providers/
-│       ├── base.js
-│       ├── anthropic.js
-│       └── openai.js
-├── tests/
-├── CONTRIBUTING.md
-└── icons/
-```
-
-### How it works
-
-1. `background.js` registers content scripts programmatically for each site in `SITE_MODULES`
-2. When you visit a supported site, the content scripts load: `bridge.js` → `helpers.js` → site helpers → tools → prompt → injector
-3. The injector registers tools with `window.__webmcpRegistry` based on the current page
-4. The side panel connects to the registry, fetches tools, and passes them to the AI provider
-5. The AI calls tools via message passing — bridge executes them in the page context
-
-Adding a new site = one entry in `SITE_MODULES` + one folder under `content/sites/`.
 
 ---
 
