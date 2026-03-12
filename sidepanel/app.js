@@ -6,6 +6,7 @@ const App = (() => {
   let registeredTools = [];
   let disabledTools = new Set();
   let isStreaming = false;
+  let isCancelled = false;
   let pageContext = {};
   let sitePrompt = '';
   let registeredSitePatterns = [];
@@ -594,7 +595,8 @@ const App = (() => {
   async function sendMessage(userText) {
     if (isStreaming || !userText.trim()) return;
     isStreaming = true;
-    sendBtn.disabled = true;
+    isCancelled = false;
+    showStopButton();
     messageInput.disabled = true;
 
     addUserMessage(userText);
@@ -606,7 +608,7 @@ const App = (() => {
     } catch (e) {
       addErrorMessage(e.message);
       isStreaming = false;
-      sendBtn.disabled = false;
+      showSendButton();
       messageInput.disabled = false;
       return;
     }
@@ -620,7 +622,7 @@ const App = (() => {
         if (!toolsReady) {
           addErrorMessage('Could not connect to site tools. Please navigate to a supported site and try again.');
           isStreaming = false;
-          sendBtn.disabled = false;
+          showSendButton();
           messageInput.disabled = false;
           clearInlineStatus();
           return;
@@ -643,10 +645,9 @@ const App = (() => {
     saveConversation();
 
     isStreaming = false;
-    sendBtn.disabled = false;
+    showSendButton();
     messageInput.disabled = false;
     clearInlineStatus();
-    // Delay focus slightly to ensure the browser processes the disabled=false change
     setTimeout(() => messageInput.focus(), 50);
   }
 
@@ -798,6 +799,7 @@ const App = (() => {
     const MAX_RETRIES = 4;
 
     while (iteration < maxIterations) {
+      if (isCancelled) return;
       iteration++;
       const thinkingVerbs = ['Plotting the route', 'Charting a course', 'Checking the itinerary', 'Consulting the co-pilot'];
       const thinkVerb = thinkingVerbs[Math.floor(Math.random() * thinkingVerbs.length)];
@@ -906,6 +908,7 @@ const App = (() => {
       if (accumulatedText && accumulatedText.trim()) {
         finalizeMessage(bubble);
         pushAssistantText(accumulatedText);
+        saveConversation(); // Save after each assistant message so tab switches don't lose context
       } else {
         // Remove empty bubble
         bubble.closest('.message')?.remove();
@@ -916,6 +919,7 @@ const App = (() => {
       }
 
       for (const { toolName, toolUseId, args } of pendingToolCalls) {
+        if (isCancelled) return;
         pushAssistantToolUse(toolUseId, toolName, args);
 
         const card = createToolCallCard(toolName);
@@ -1004,6 +1008,41 @@ const App = (() => {
     });
   }
 
+  // ── Stop / Cancel ────────────────────────────────────────────────────────
+
+  const SEND_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M14 8L2 2l3 6-3 6 12-6z" fill="currentColor"/></svg>';
+  const STOP_ICON = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" fill="currentColor"/></svg>';
+
+  function showStopButton() {
+    sendBtn.innerHTML = STOP_ICON;
+    sendBtn.disabled = false;
+    sendBtn.classList.add('stop-mode');
+    sendBtn.setAttribute('aria-label', 'Stop generation');
+  }
+
+  function showSendButton() {
+    sendBtn.innerHTML = SEND_ICON;
+    sendBtn.classList.remove('stop-mode');
+    sendBtn.setAttribute('aria-label', 'Send message');
+    sendBtn.disabled = !messageInput.value.trim();
+  }
+
+  function cancelGeneration() {
+    if (!isStreaming) return;
+    isCancelled = true;
+    clearInlineStatus();
+    removeRunningToolCards();
+    addAssistantMessage('Canceled. What else would you like WebMCPTools to do?');
+  }
+
+  function addAssistantMessage(text) {
+    const el = document.createElement('div');
+    el.className = 'message assistant';
+    el.innerHTML = `<div class="message-bubble"><p>${escapeHtml(text)}</p></div>`;
+    messagesEl.appendChild(el);
+    scrollToBottom();
+  }
+
   // ── Input Handling ────────────────────────────────────────────────────────
 
   function initInput() {
@@ -1018,22 +1057,26 @@ const App = (() => {
     messageInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        if (!sendBtn.disabled) {
+        if (isStreaming) {
+          cancelGeneration();
+        } else if (!sendBtn.disabled) {
           const text = messageInput.value.trim();
           messageInput.value = '';
           messageInput.style.height = 'auto';
-          sendBtn.disabled = true;
           sendMessage(text);
         }
       }
     });
 
     sendBtn.addEventListener('click', () => {
+      if (isStreaming) {
+        cancelGeneration();
+        return;
+      }
       const text = messageInput.value.trim();
       if (text) {
         messageInput.value = '';
         messageInput.style.height = 'auto';
-        sendBtn.disabled = true;
         sendMessage(text);
       }
     });

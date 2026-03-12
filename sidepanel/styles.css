@@ -700,6 +700,16 @@ body {
   transform: none;
 }
 
+.send-btn.stop-mode {
+  background: var(--error);
+  color: #fff;
+}
+
+.send-btn.stop-mode:hover {
+  background: var(--error);
+  opacity: 0.85;
+}
+
 .input-footer {
   min-height: 18px;
   padding-top: 4px;
