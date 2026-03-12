@@ -793,7 +793,7 @@ const App = (() => {
 
   async function runAgentLoop(provider, targetTabId) {
     let iteration = 0;
-    const maxIterations = 10;
+    let maxIterations = 10;
     let retryCount = 0;
     const MAX_RETRIES = 4;
 
@@ -933,6 +933,13 @@ const App = (() => {
         // Cap tool result size before adding to history to control token usage
         const cappedResult = capToolResult(result, 1500);
         conversationHistory.push(provider.formatToolResult(toolUseId, cappedResult));
+
+        // If booking was completed (fareRank clicked Continue), do one final
+        // iteration so the AI can respond with fun facts, then stop.
+        if (toolName === 'get_booking_link' && args.fareRank) {
+          // Allow one more iteration for the AI's final message, then force stop
+          maxIterations = iteration + 1;
+        }
       }
     }
 
