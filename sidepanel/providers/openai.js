@@ -36,6 +36,22 @@ Keep suggestions short (2-5 words) and actionable. Include 2-4 suggestions. Alwa
     if (this.sitePrompt) {
       prompt = this.sitePrompt + '\n\n' + prompt;
     }
+    if (this.userPreferences && Object.keys(this.userPreferences).length > 0) {
+      const prefLines = [];
+      const labels = { priority: 'Priority', cabin: 'Cabin class', bags: 'Bags', stops: 'Stops' };
+      const valueLabels = {
+        price: 'lowest price', direct: 'direct/nonstop flights', duration: 'shortest duration', schedule: 'best schedule',
+        economy: 'Economy', premium_economy: 'Premium Economy', business: 'Business', first: 'First',
+        carry_on: 'carry-on only', checked_1: '1 checked bag', checked_2: '2 checked bags',
+        any: 'any number of stops', nonstop: 'nonstop only', '1_or_fewer': '1 stop or fewer'
+      };
+      for (const [key, value] of Object.entries(this.userPreferences)) {
+        if (labels[key]) prefLines.push(`- ${labels[key]}: ${valueLabels[value] || value}`);
+      }
+      if (prefLines.length > 0) {
+        prompt += `\n\nUSER PREFERENCES (apply these automatically — don't ask about them unless the user specifies otherwise):\n${prefLines.join('\n')}`;
+      }
+    }
     return prompt;
   }
 

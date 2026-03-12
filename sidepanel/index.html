@@ -45,6 +45,55 @@
 
   <!-- Chat View -->
   <main id="chat-view" class="view active">
+    <!-- Onboarding overlay (first-time setup) -->
+    <div id="onboarding-overlay" class="onboarding-overlay" style="display: none;">
+        <h2>Welcome to WebMCPTools</h2>
+        <p class="onboarding-subtitle">Set your travel preferences so I can find flights faster.</p>
+
+        <div class="pref-section">
+          <h3>What matters most?</h3>
+          <div class="pref-options" data-pref="priority">
+            <button class="pref-chip" data-value="price">Lowest price</button>
+            <button class="pref-chip" data-value="direct">Direct flights</button>
+            <button class="pref-chip" data-value="duration">Shortest trip</button>
+            <button class="pref-chip" data-value="schedule">Best schedule</button>
+          </div>
+        </div>
+
+        <div class="pref-section">
+          <h3>Cabin class</h3>
+          <div class="pref-options" data-pref="cabin">
+            <button class="pref-chip" data-value="economy">Economy</button>
+            <button class="pref-chip" data-value="premium_economy">Premium Economy</button>
+            <button class="pref-chip" data-value="business">Business</button>
+            <button class="pref-chip" data-value="first">First</button>
+          </div>
+        </div>
+
+        <div class="pref-section">
+          <h3>Bags</h3>
+          <div class="pref-options" data-pref="bags">
+            <button class="pref-chip" data-value="carry_on">Carry-on only</button>
+            <button class="pref-chip" data-value="checked_1">1 checked bag</button>
+            <button class="pref-chip" data-value="checked_2">2 checked bags</button>
+          </div>
+        </div>
+
+        <div class="pref-section">
+          <h3>Stops</h3>
+          <div class="pref-options" data-pref="stops">
+            <button class="pref-chip" data-value="any">Any</button>
+            <button class="pref-chip" data-value="nonstop">Nonstop only</button>
+            <button class="pref-chip" data-value="1_or_fewer">1 stop or fewer</button>
+          </div>
+        </div>
+
+        <div class="onboarding-footer">
+          <button id="onboarding-save-btn" class="primary-btn">Save & Start Chatting</button>
+          <button id="onboarding-skip-btn" class="skip-btn">Skip for now</button>
+        </div>
+      </div>
+
     <div id="messages" class="messages" role="log" aria-live="polite" aria-label="Conversation">
       <!-- Welcome state -->
       <div class="welcome" id="welcome-state">
@@ -131,6 +180,44 @@
           </div>
           <button class="test-btn" id="test-openai-btn" data-provider="openai">Test connection</button>
           <span class="key-status" id="openai-key-status"></span>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <h3>Travel Preferences</h3>
+        <div class="form-group">
+          <label>Priority</label>
+          <div class="pref-settings-chips" data-pref="priority">
+            <button class="pref-chip" data-value="price">Lowest price</button>
+            <button class="pref-chip" data-value="direct">Direct flights</button>
+            <button class="pref-chip" data-value="duration">Shortest trip</button>
+            <button class="pref-chip" data-value="schedule">Best schedule</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Cabin class</label>
+          <div class="pref-settings-chips" data-pref="cabin">
+            <button class="pref-chip" data-value="economy">Economy</button>
+            <button class="pref-chip" data-value="premium_economy">Premium Economy</button>
+            <button class="pref-chip" data-value="business">Business</button>
+            <button class="pref-chip" data-value="first">First</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Bags</label>
+          <div class="pref-settings-chips" data-pref="bags">
+            <button class="pref-chip" data-value="carry_on">Carry-on only</button>
+            <button class="pref-chip" data-value="checked_1">1 checked bag</button>
+            <button class="pref-chip" data-value="checked_2">2 checked bags</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Stops</label>
+          <div class="pref-settings-chips" data-pref="stops">
+            <button class="pref-chip" data-value="any">Any</button>
+            <button class="pref-chip" data-value="nonstop">Nonstop only</button>
+            <button class="pref-chip" data-value="1_or_fewer">1 stop or fewer</button>
+          </div>
         </div>
       </section>
 

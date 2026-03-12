@@ -10,6 +10,38 @@ const App = (() => {
   let sitePrompt = '';
   let registeredSitePatterns = [];
   let sessionTokens = { input: 0, output: 0, cacheRead: 0, cacheCreate: 0 };
+  let userPreferences = {};
+
+  // Fun flight-themed status messages mapped to tool names
+  const STATUS_VERBS = {
+    search_flights: ['Scanning runways', 'Checking departure boards', 'Browsing the skies'],
+    get_results: ['Reading the arrivals board', 'Collecting boarding passes', 'Reviewing flight manifests'],
+    set_filters: ['Adjusting the radar', 'Fine-tuning your search', 'Dialing in preferences'],
+    sort_results: ['Reshuffling the deck', 'Reranking itineraries', 'Sorting by wing span'],
+    get_price_insights: ['Consulting the fare oracle', 'Crunching ticket prices', 'Scanning the date grid'],
+    get_flight_details: ['Peeking inside the cabin', 'Checking legroom specs', 'Inspecting the aircraft'],
+    track_price: ['Setting up fare alerts', 'Watching for price drops', 'Deploying price radar'],
+    get_tracked_flights: ['Checking your watchlist', 'Reviewing saved alerts', 'Opening the logbook'],
+    get_booking_link: ['Preparing your boarding pass', 'Opening the booking gate', 'Connecting to the airline'],
+    select_return_flight: ['Browsing return options', 'Planning the trip home', 'Picking a comeback flight'],
+    explore_destinations: ['Spinning the globe', 'Scouting destinations', 'Mapping cheap getaways'],
+    search_multi_city: ['Plotting the world tour', 'Charting multiple legs', 'Planning your adventure'],
+    set_connecting_airports: ['Rerouting the layovers', 'Adjusting connections', 'Filtering transit hubs'],
+    set_search_options: ['Tweaking trip settings', 'Updating passenger count', 'Adjusting cabin class'],
+    _default: ['Working on it', 'Crunching the numbers', 'Fetching data', 'Processing', 'Almost there']
+  };
+
+  function getStatusVerb(toolName) {
+    const verbs = STATUS_VERBS[toolName] || STATUS_VERBS._default;
+    return verbs[Math.floor(Math.random() * verbs.length)];
+  }
+
+  function setFunStatus(toolName) {
+    const verb = getStatusVerb(toolName);
+    const icons = ['✈️', '🌍', '🗺️', '🧳', '🛫', '🎫', '🏝️', '⛅'];
+    const icon = icons[Math.floor(Math.random() * icons.length)];
+    statusText.innerHTML = `<span class="status-icon">${icon}</span> ${verb}...`;
+  }
 
   // DOM refs
   const messagesEl = document.getElementById('messages');
@@ -391,7 +423,7 @@ const App = (() => {
 
     messageInput.value = '';
     messageInput.style.height = 'auto';
-    statusText.textContent = '';
+    statusText.innerHTML = '';
     messageInput.focus();
   }
 
@@ -556,7 +588,7 @@ const App = (() => {
 
     // If no tools connected, try to navigate to a supported site and wait
     if (getActiveTools().length === 0) {
-      statusText.textContent = 'Navigating to supported site...';
+      statusText.innerHTML = '<span class="status-icon">🛫</span> Navigating to supported site...';
       const navigated = await navigateToDefaultSite();
       if (navigated) {
         const toolsReady = await waitForTools(10000);
@@ -565,7 +597,7 @@ const App = (() => {
           isStreaming = false;
           sendBtn.disabled = false;
           messageInput.disabled = false;
-          statusText.textContent = '';
+          statusText.innerHTML = '';
           return;
         }
       }
@@ -575,8 +607,11 @@ const App = (() => {
     const targetTabId = await getActiveTabId();
     pageContext = await fetchPageContext(targetTabId);
 
-    // Pass site-specific prompt to the provider
+    // Pass site-specific prompt + user preferences to the provider
+    const saved = await Settings.load();
+    userPreferences = saved.preferences || {};
     provider.sitePrompt = sitePrompt;
+    provider.userPreferences = userPreferences;
 
     await runAgentLoop(provider, targetTabId);
 
@@ -585,7 +620,7 @@ const App = (() => {
     isStreaming = false;
     sendBtn.disabled = false;
     messageInput.disabled = false;
-    statusText.textContent = '';
+    statusText.innerHTML = '';
     // Delay focus slightly to ensure the browser processes the disabled=false change
     setTimeout(() => messageInput.focus(), 50);
   }
@@ -738,7 +773,11 @@ const App = (() => {
 
     while (iteration < maxIterations) {
       iteration++;
-      statusText.textContent = iteration > 1 ? `Continuing (step ${iteration})...` : 'Thinking...';
+      const thinkingVerbs = ['Plotting the route', 'Charting a course', 'Checking the itinerary', 'Consulting the co-pilot'];
+      const thinkVerb = thinkingVerbs[Math.floor(Math.random() * thinkingVerbs.length)];
+      const thinkIcons = ['✈️', '🌍', '🗺️', '🧳'];
+      const thinkIcon = thinkIcons[Math.floor(Math.random() * thinkIcons.length)];
+      statusText.innerHTML = `<span class="status-icon">${thinkIcon}</span> ${thinkVerb}...`;
 
       const bubble = createAssistantMessage();
       let accumulatedText = '';
@@ -853,7 +892,7 @@ const App = (() => {
         pushAssistantToolUse(toolUseId, toolName, args);
 
         const card = createToolCallCard(toolName);
-        statusText.textContent = `Calling ${toolName}...`;
+        setFunStatus(toolName);
 
         let result;
         try {

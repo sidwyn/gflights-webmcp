@@ -5,7 +5,9 @@ const Settings = (() => {
     anthropicKey: 'webmcp_anthropic_key',
     openaiKey: 'webmcp_openai_key',
     selectedModel: 'webmcp_selected_model',
-    disabledTools: 'webmcp_disabled_tools'
+    disabledTools: 'webmcp_disabled_tools',
+    preferences: 'webmcp_preferences',
+    onboardingDone: 'webmcp_onboarding_done'
   };
 
   async function load() {
@@ -15,7 +17,9 @@ const Settings = (() => {
           anthropicKey: items[STORAGE_KEYS.anthropicKey] || '',
           openaiKey: items[STORAGE_KEYS.openaiKey] || '',
           selectedModel: items[STORAGE_KEYS.selectedModel] || 'claude-sonnet-4-6',
-          disabledTools: items[STORAGE_KEYS.disabledTools] || []
+          disabledTools: items[STORAGE_KEYS.disabledTools] || [],
+          preferences: items[STORAGE_KEYS.preferences] || {},
+          onboardingDone: items[STORAGE_KEYS.onboardingDone] || false
         });
       });
     });
@@ -27,6 +31,8 @@ const Settings = (() => {
     if ('openaiKey' in updates) mapped[STORAGE_KEYS.openaiKey] = updates.openaiKey;
     if ('selectedModel' in updates) mapped[STORAGE_KEYS.selectedModel] = updates.selectedModel;
     if ('disabledTools' in updates) mapped[STORAGE_KEYS.disabledTools] = updates.disabledTools;
+    if ('preferences' in updates) mapped[STORAGE_KEYS.preferences] = updates.preferences;
+    if ('onboardingDone' in updates) mapped[STORAGE_KEYS.onboardingDone] = updates.onboardingDone;
     return new Promise(resolve => chrome.storage.local.set(mapped, resolve));
   }
 
@@ -207,5 +213,66 @@ document.addEventListener('DOMContentLoaded', async () => {
   function setStatus(el, type, text) {
     el.className = `key-status ${type}`;
     el.textContent = text;
+  }
+
+  // ── Preference Chips (shared logic for onboarding + settings) ─────────
+  function initPrefChips(container, savedPrefs) {
+    container.querySelectorAll('[data-pref]').forEach(group => {
+      const key = group.dataset.pref;
+      const savedValue = savedPrefs[key];
+      group.querySelectorAll('.pref-chip').forEach(chip => {
+        if (chip.dataset.value === savedValue) chip.classList.add('selected');
+        chip.addEventListener('click', () => {
+          group.querySelectorAll('.pref-chip').forEach(c => c.classList.remove('selected'));
+          chip.classList.add('selected');
+        });
+      });
+    });
+  }
+
+  function readPrefChips(container) {
+    const prefs = {};
+    container.querySelectorAll('[data-pref]').forEach(group => {
+      const key = group.dataset.pref;
+      const selected = group.querySelector('.pref-chip.selected');
+      if (selected) prefs[key] = selected.dataset.value;
+    });
+    return prefs;
+  }
+
+  // ── Settings preference chips ─────────────────────────────────────────
+  const settingsContent = document.querySelector('.settings-content');
+  initPrefChips(settingsContent, saved.preferences);
+
+  // Save prefs when clicking chips in settings
+  settingsContent.querySelectorAll('.pref-chip').forEach(chip => {
+    chip.addEventListener('click', async () => {
+      // Small delay so selected class is applied first
+      await new Promise(r => setTimeout(r, 10));
+      const prefs = readPrefChips(settingsContent);
+      await Settings.save({ preferences: prefs });
+    });
+  });
+
+  // ── Onboarding ────────────────────────────────────────────────────────
+  const onboarding = document.getElementById('onboarding-overlay');
+  if (onboarding && !saved.onboardingDone) {
+    onboarding.style.display = '';
+    initPrefChips(onboarding, {});
+
+    document.getElementById('onboarding-save-btn').addEventListener('click', async () => {
+      const prefs = readPrefChips(onboarding);
+      await Settings.save({ preferences: prefs, onboardingDone: true });
+      onboarding.style.display = 'none';
+      // Sync settings chips with onboarding selections
+      initPrefChips(settingsContent, prefs);
+      document.getElementById('message-input')?.focus();
+    });
+
+    document.getElementById('onboarding-skip-btn').addEventListener('click', async () => {
+      await Settings.save({ onboardingDone: true });
+      onboarding.style.display = 'none';
+      document.getElementById('message-input')?.focus();
+    });
   }
 });

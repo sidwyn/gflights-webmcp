@@ -1,5 +1,5 @@
 {
-  "name": "webmcptools",
+  "name": "webmcp-tool-library",
   "version": "0.2.0",
   "description": "A multi-site Chrome extension platform for WebMCP tools. Community-contributed site modules let AI agents interact with any website.",
   "main": "background.js",

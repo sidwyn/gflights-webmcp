@@ -77,7 +77,7 @@ Keys are stored locally in `chrome.storage.local` and never leave your browser e
 ## Architecture
 
 ```
-webmcptools/
+webmcp-tool-library/
 ├── manifest.json                          # Extension manifest (no static content_scripts)
 ├── background.js                          # SITE_MODULES registry + programmatic registration
 ├── content/
