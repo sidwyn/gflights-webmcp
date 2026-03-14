@@ -12,7 +12,7 @@ Tools should be built by the community:
 
 This way a company won't over-invest at the start, and the community gets early access to awesome agents utilizing the webmcp spec. This beats the chicken-and-egg problem as well.
 
-**Google Flights** and **Google Hotels** are the first two site modules. More coming soon. Open an issue if you have a suggestion for what else to tackle next.
+**Google Flights**, **Google Hotels**, **Amazon**, **Walmart**, and **Target** are the five site modules. Open an issue if you have a suggestion for what else to tackle next.
 
 ---
 
@@ -30,6 +30,9 @@ https://github.com/sidwyn/webmcp-tool-library/raw/main/media/google-flights-toky
 | -------------- | ---------------- | ----- | ------------------------------------------------------------- |
 | Google Flights | `google-flights` | 14    | Search, filter, sort, compare prices, track, and book flights |
 | Google Hotels  | `google-hotels`  | 11    | Search, filter, sort, compare prices, read reviews, book, track, and save hotels |
+| Amazon         | `amazon`         | 12    | Search, filter, sort, compare, read reviews, add to cart, buy now, check prices |
+| Walmart        | `walmart`        | 7     | Search, filter, sort, view details, add to cart, view cart |
+| Target         | `target`         | 9     | Search, filter, sort, view details, add to cart, find deals, check store availability |
 
 Want to add a site? See [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -85,6 +88,21 @@ webmcp-tool-library/
 │       │   ├── injector.js
 │       │   ├── prompt.js
 │       │   └── tools/                     # 11 tool files
+│       ├── amazon/                        # Amazon shopping module (12 tools)
+│       │   ├── helpers.js
+│       │   ├── injector.js
+│       │   ├── prompt.js
+│       │   └── tools/                     # 12 tool files
+│       ├── walmart/                       # Walmart shopping module (7 tools)
+│       │   ├── helpers.js
+│       │   ├── injector.js
+│       │   ├── prompt.js
+│       │   └── tools/                     # 7 tool files
+│       ├── target/                        # Target shopping module (9 tools)
+│       │   ├── helpers.js
+│       │   ├── injector.js
+│       │   ├── prompt.js
+│       │   └── tools/                     # 9 tool files
 │       └── _template/                     # Skeleton for new site modules
 ├── sidepanel/
 │   ├── index.html
@@ -156,6 +174,31 @@ Adding a new site = one entry in `SITE_MODULES` + one folder under `content/site
 - **Site-aware UI** — welcome screen and example prompts change based on whether you're on Flights or Hotels
 - **Onboarding preferences** — customize defaults for both flights and hotels (budget, star rating, amenities)
 
+### Amazon Module
+
+- **Natural language search** — "Find the best rated wireless headphones under $100"
+- **Full filter control** — price range, brand, Prime eligibility, customer rating, department
+- **Product comparison** — compare multiple products side by side
+- **Review reading** — customer reviews with ratings and titles
+- **Price tracking** — current vs list price, coupon detection
+- **Cart management** — add to cart, view cart, buy now
+- **Checkout summary** — review order details before placing
+
+### Walmart Module
+
+- **Natural language search** — "Find me a 4K TV under $400"
+- **Full filter control** — price, brand, fulfillment method, rating, special offers (rollback, clearance)
+- **Product details** — specifications, seller info, fulfillment options
+- **Cart management** — add to cart with quantity, view cart with totals
+
+### Target Module
+
+- **Natural language search** — "Find me a coffee maker under $50"
+- **Full filter control** — price, brand, rating, shipping options, sale items
+- **Store availability** — check pickup, shipping, and delivery by ZIP code
+- **Deal finder** — Circle offers, sale badges, promo badges
+- **Cart management** — add to cart with color/size/quantity options
+
 ---
 
 ## Installation
@@ -213,6 +256,49 @@ Keys are stored locally in `chrome.storage.local` and never leave your browser e
 | `save_hotel`         | Results page | Save or unsave a hotel to your collection                                |
 | `book_hotel`         | Detail page  | Open a booking provider's website to complete the reservation            |
 | `track_hotel`        | Detail page  | Enable/disable price tracking alerts for a hotel                         |
+
+## Amazon Tools
+
+| Tool                   | Available on     | Description                                                    |
+| ---------------------- | ---------------- | -------------------------------------------------------------- |
+| `search_products`      | All pages        | Search Amazon by keyword with optional sort                    |
+| `get_results`          | Search page      | Read product listings with prices, ratings, Prime badges       |
+| `set_filters`          | Search page      | Filter by price range, brand, Prime, rating, department        |
+| `sort_results`         | Search page      | Sort by featured, price, rating, newest, best sellers          |
+| `get_product_details`  | Search / Product | Full product info: price, rating, availability, specs          |
+| `get_reviews`          | Product page     | Read customer reviews with ratings and titles                  |
+| `check_price_history`  | Product page     | Check current vs list price and any available coupons          |
+| `add_to_cart`          | Product page     | Add current product to cart with quantity                      |
+| `buy_now`              | Product page     | Click "Buy Now" for immediate checkout                        |
+| `get_cart`             | All pages        | View cart contents, subtotal, and estimated total              |
+| `compare_products`     | Search page      | Compare multiple products side by side                        |
+| `get_checkout_summary` | Checkout page    | Read order summary before placing order                       |
+
+## Walmart Tools
+
+| Tool                  | Available on     | Description                                                     |
+| --------------------- | ---------------- | --------------------------------------------------------------- |
+| `search_products`     | All pages        | Search Walmart by keyword with optional sort                    |
+| `get_results`         | Search page      | Read product listings with prices, ratings, seller info         |
+| `set_filters`         | Search page      | Filter by price, brand, fulfillment, rating, special offers     |
+| `sort_results`        | Search page      | Sort by best match, price, best seller, rating, newest          |
+| `get_product_details` | Search / Product | Full product info: price, rating, seller, fulfillment, specs    |
+| `add_to_cart`         | Product page     | Add current product to cart with quantity                       |
+| `get_cart`            | All pages        | View cart contents, subtotal, and estimated total               |
+
+## Target Tools
+
+| Tool                       | Available on     | Description                                                    |
+| -------------------------- | ---------------- | -------------------------------------------------------------- |
+| `search_products`          | All pages        | Search Target by keyword                                       |
+| `get_search_results`       | Search page      | Read product listings with prices, ratings, badges             |
+| `set_filters`              | Search page      | Filter by price, brand, rating, shipping, sale                 |
+| `sort_results`             | Search page      | Sort by relevance, price, rating, newest, best selling         |
+| `get_product_details`      | Search / Product | Full product info: price, rating, availability, specs          |
+| `add_to_cart`              | Product page     | Add to cart with color, size, and quantity options              |
+| `get_cart_summary`         | All pages        | View cart contents and totals                                  |
+| `get_deals`                | All pages        | Find deals, Circle offers, and sale badges on current page     |
+| `check_store_availability` | Product page     | Check in-store pickup, shipping, and delivery by ZIP code      |
 
 ---
 
