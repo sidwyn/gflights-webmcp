@@ -517,7 +517,8 @@ const App = (() => {
     try {
       chrome.storage.session.set({
         webmcp_conversation: conversationHistory,
-        webmcp_has_messages: conversationHistory.length > 0
+        webmcp_has_messages: conversationHistory.length > 0,
+        webmcp_site_id: currentSiteId
       });
     } catch {
       // session storage may not be available
@@ -527,12 +528,15 @@ const App = (() => {
   async function loadConversation() {
     return new Promise(resolve => {
       try {
-        chrome.storage.session.get(['webmcp_conversation', 'webmcp_has_messages'], items => {
+        chrome.storage.session.get(['webmcp_conversation', 'webmcp_has_messages', 'webmcp_site_id'], items => {
           if (chrome.runtime.lastError || !items.webmcp_has_messages) {
             resolve(false);
             return;
           }
           conversationHistory = items.webmcp_conversation || [];
+          if (items.webmcp_site_id) {
+            currentSiteId = items.webmcp_site_id;
+          }
           resolve(conversationHistory.length > 0);
         });
       } catch {
@@ -1257,8 +1261,13 @@ const App = (() => {
         // Update welcome UI if site changed within the same tab
         const newSiteId = detectSiteId(changeInfo.url);
         if (newSiteId !== currentSiteId) {
+          const hadSite = currentSiteId !== null;
           currentSiteId = newSiteId;
-          startNewChat();
+          // Only wipe conversation when actually switching between different sites,
+          // not when currentSiteId was null (side panel just initialized with restored history)
+          if (hadSite) {
+            startNewChat();
+          }
           updateWelcomeForSite(newSiteId);
         }
 
@@ -1295,8 +1304,11 @@ const App = (() => {
 
         // Clear conversation when switching to a different site (or away from a site)
         if (newSiteId !== currentSiteId) {
+          const hadSite = currentSiteId !== null;
           currentSiteId = newSiteId;
-          startNewChat();
+          if (hadSite) {
+            startNewChat();
+          }
           updateWelcomeForSite(newSiteId);
         }
 
