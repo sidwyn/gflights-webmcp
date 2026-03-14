@@ -102,12 +102,27 @@ const WebMCPHelpers = (() => {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  function setSliderValue(slider, value) {
+    const min = parseFloat(slider.min) || 0;
+    const max = parseFloat(slider.max) || 1440;
+    const clamped = Math.min(Math.max(value, min), max);
+    const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value');
+    if (nativeSetter && nativeSetter.set) {
+      nativeSetter.set.call(slider, clamped);
+    } else {
+      slider.value = clamped;
+    }
+    slider.dispatchEvent(new Event('input', { bubbles: true }));
+    slider.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
   return {
     waitForElement,
     waitForElementToDisappear,
     findByText,
     findByAriaLabel,
     simulateClick,
-    sleep
+    sleep,
+    setSliderValue
   };
 })();

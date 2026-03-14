@@ -33,6 +33,32 @@ const SITE_MODULES = [
       'content/sites/google-flights/prompt.js',
       'content/sites/google-flights/injector.js'
     ]
+  },
+  {
+    id: 'google-hotels',
+    defaultUrl: 'https://www.google.com/travel/search?qs=OAA',
+    matches: [
+      'https://www.google.com/travel/search*',
+      'https://www.google.com/travel/hotels*'
+    ],
+    js: [
+      'content/bridge.js',
+      'content/helpers.js',
+      'content/sites/google-hotels/helpers.js',
+      'content/sites/google-hotels/tools/searchHotels.js',
+      'content/sites/google-hotels/tools/getResults.js',
+      'content/sites/google-hotels/tools/setFilters.js',
+      'content/sites/google-hotels/tools/sortResults.js',
+      'content/sites/google-hotels/tools/getHotelDetails.js',
+      'content/sites/google-hotels/tools/getPrices.js',
+      'content/sites/google-hotels/tools/setSearchOptions.js',
+      'content/sites/google-hotels/tools/saveHotel.js',
+      'content/sites/google-hotels/tools/bookHotel.js',
+      'content/sites/google-hotels/tools/getReviews.js',
+      'content/sites/google-hotels/tools/trackHotel.js',
+      'content/sites/google-hotels/prompt.js',
+      'content/sites/google-hotels/injector.js'
+    ]
   }
 ];
 
@@ -95,6 +121,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === 'GET_SITE_MODULES') {
     sendResponse({ siteModules: SITE_MODULES });
+    return false;
+  }
+
+  if (message.type === 'RELOAD_EXTENSION') {
+    chrome.runtime.reload();
     return false;
   }
 });

@@ -13,6 +13,7 @@ const App = (() => {
   let sessionTokens = { input: 0, output: 0, cacheRead: 0, cacheCreate: 0 };
   let sessionToolTime = 0;
   let userPreferences = {};
+  let currentSiteId = null; // 'google-flights', 'google-hotels', or null
 
   // Fun flight-themed status messages mapped to tool names
   const STATUS_VERBS = {
@@ -30,8 +31,80 @@ const App = (() => {
     search_multi_city: ['Plotting the world tour', 'Charting multiple legs', 'Planning your adventure'],
     set_connecting_airports: ['Rerouting the layovers', 'Adjusting connections', 'Filtering transit hubs'],
     set_search_options: ['Tweaking trip settings', 'Updating passenger count', 'Adjusting cabin class'],
+    // Google Hotels
+    search_hotels: ['Scanning the lobby', 'Checking availability', 'Browsing destinations'],
+    get_hotel_details: ['Inspecting the rooms', 'Reading the guest book', 'Checking amenities'],
+    get_prices: ['Comparing rates', 'Shopping for deals', 'Scanning booking sites'],
+    save_hotel: ['Bookmarking your stay', 'Adding to wishlist', 'Pinning the hotel'],
+    book_hotel: ['Opening the booking page', 'Connecting to provider', 'Preparing your reservation'],
+    get_reviews: ['Reading guest reviews', 'Checking what guests say', 'Browsing testimonials'],
+    track_hotel: ['Setting up price alerts', 'Activating tracking', 'Watching for deals'],
     _default: ['Working on it', 'Crunching the numbers', 'Fetching data', 'Processing', 'Almost there']
   };
+
+  // Site-specific welcome screen configuration
+  const SITE_WELCOME = {
+    'google-flights': {
+      title: 'Google Flights',
+      description: 'I can search flights, compare prices, track fares, and help you book.',
+      prompts: [
+        'Find me a flight to Cancun next month under $300',
+        'Cheapest nonstop from SFO to NYC in April',
+        'Compare business class flights to London',
+        'Track prices for a round trip to Tokyo'
+      ]
+    },
+    'google-hotels': {
+      title: 'Google Hotels',
+      description: 'I can search hotels, compare prices, read reviews, check amenities, track prices, and help you book.',
+      prompts: [
+        'Find me a hotel in Tokyo under $150/night with free cancellation',
+        'Best rated 4-star hotels in Paris with a pool',
+        'Compare booking prices for hotels near Times Square',
+        'Find pet-friendly hotels in Barcelona with breakfast included'
+      ]
+    },
+    _default: {
+      title: 'WebMCPTools',
+      description: 'I can interact with supported websites for you. Navigate to a supported site and start chatting.',
+      prompts: [
+        'Find me a flight to Cancun next month under $300',
+        'Cheapest nonstop from SFO to NYC in April',
+        'Find me a hotel in Tokyo under $150/night',
+        'Best rated hotels in Paris with a pool'
+      ]
+    }
+  };
+
+  function detectSiteId(url) {
+    if (!url) return null;
+    if (url.includes('google.com/travel/flights')) return 'google-flights';
+    if (url.includes('google.com/travel/search') || url.includes('google.com/travel/hotels')) return 'google-hotels';
+    return null;
+  }
+
+  function updateWelcomeForSite(siteId) {
+    const config = SITE_WELCOME[siteId] || SITE_WELCOME._default;
+    const titleEl = welcomeState.querySelector('h2');
+    const descEl = welcomeState.querySelector('p');
+    const promptsEl = welcomeState.querySelector('.example-prompts');
+
+    if (titleEl) titleEl.textContent = config.title;
+    if (descEl) descEl.textContent = config.description;
+    if (promptsEl) {
+      promptsEl.innerHTML = config.prompts.map(p =>
+        `<button class="example-prompt-btn">${p}</button>`
+      ).join('');
+      // Re-bind click handlers
+      promptsEl.querySelectorAll('.example-prompt-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          messageInput.value = '';
+          messageInput.style.height = 'auto';
+          sendMessage(btn.textContent.trim());
+        });
+      });
+    }
+  }
 
   function getStatusVerb(toolName) {
     const verbs = STATUS_VERBS[toolName] || STATUS_VERBS._default;
@@ -1128,6 +1201,15 @@ const App = (() => {
       if (changeInfo.url === undefined) return;
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (!tabs[0] || tabs[0].id !== tabId) return;
+
+        // Update welcome UI if site changed within the same tab
+        const newSiteId = detectSiteId(changeInfo.url);
+        if (newSiteId !== currentSiteId) {
+          currentSiteId = newSiteId;
+          startNewChat();
+          updateWelcomeForSite(newSiteId);
+        }
+
         if (!urlMatchesSitePatterns(changeInfo.url)) {
           registeredTools = [];
           pageContext = {};
@@ -1153,10 +1235,19 @@ const App = (() => {
       });
     });
 
-    // Also refresh tools when user switches tabs
+    // Also refresh tools when user switches tabs — clear conversation for new context
     chrome.tabs.onActivated.addListener(({ tabId }) => {
       chrome.tabs.get(tabId, (tab) => {
         if (chrome.runtime.lastError) return;
+        const newSiteId = detectSiteId(tab.url);
+
+        // Clear conversation when switching to a different site (or away from a site)
+        if (newSiteId !== currentSiteId) {
+          currentSiteId = newSiteId;
+          startNewChat();
+          updateWelcomeForSite(newSiteId);
+        }
+
         if (!tab.url || !urlMatchesSitePatterns(tab.url)) {
           registeredTools = [];
           pageContext = {};
@@ -1219,9 +1310,12 @@ const App = (() => {
       if (!document.hidden) messageInput.focus();
     });
 
-    // Request current tools from active tab
+    // Request current tools from active tab and set initial site context
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]) {
+        currentSiteId = detectSiteId(tabs[0].url);
+        updateWelcomeForSite(currentSiteId);
+
         chrome.tabs.sendMessage(tabs[0].id, { type: 'GET_TOOLS' }, (response) => {
           if (chrome.runtime.lastError) return;
           if (response?.tools) {

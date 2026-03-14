@@ -12,7 +12,7 @@ Tools should be built by the community:
 
 This way a company won't over-invest at the start, and the community gets early access to awesome agents utilizing the webmcp spec. This beats the chicken-and-egg problem as well.
 
-**Google Flights** is the first site module. More coming soon. Open an issue if you have a suggestion for what else to tackle next.
+**Google Flights** and **Google Hotels** are the first two site modules. More coming soon. Open an issue if you have a suggestion for what else to tackle next.
 
 ---
 
@@ -29,6 +29,7 @@ https://github.com/sidwyn/webmcp-tool-library/raw/main/media/google-flights-toky
 | Site           | Module           | Tools | Description                                                   |
 | -------------- | ---------------- | ----- | ------------------------------------------------------------- |
 | Google Flights | `google-flights` | 14    | Search, filter, sort, compare prices, track, and book flights |
+| Google Hotels  | `google-hotels`  | 11    | Search, filter, sort, compare prices, read reviews, book, track, and save hotels |
 
 Want to add a site? See [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -74,14 +75,16 @@ webmcp-tool-library/
 │   ├── bridge.js                          # Generic registry + messaging bridge
 │   ├── helpers.js                         # Generic DOM helpers (sleep, findByText, etc.)
 │   └── sites/
-│       ├── google-flights/                # First site module
+│       ├── google-flights/                # Flight search module (14 tools)
 │       │   ├── helpers.js                 # Site-specific DOM helpers
 │       │   ├── injector.js                # Tool registration + page context
 │       │   ├── prompt.js                  # AI system prompt fragment
 │       │   └── tools/                     # 14 tool files
-│       │       ├── searchFlights.js
-│       │       ├── getResults.js
-│       │       └── ...
+│       ├── google-hotels/                 # Hotel search module (11 tools)
+│       │   ├── helpers.js
+│       │   ├── injector.js
+│       │   ├── prompt.js
+│       │   └── tools/                     # 11 tool files
 │       └── _template/                     # Skeleton for new site modules
 ├── sidepanel/
 │   ├── index.html
@@ -139,6 +142,20 @@ Adding a new site = one entry in `SITE_MODULES` + one folder under `content/site
 - **Quick reply suggestions** — clickable follow-up buttons
 - **Markdown tables** — clean formatted results
 
+### Google Hotels Module
+
+- **Natural language search** — "Find me a hotel in Tokyo under $150/night"
+- **Full filter control** — price, star rating, guest rating, amenities, brands, property type, eco-certified, free cancellation
+- **Price comparison** — compare rates from Booking.com, Expedia, Hotels.com, Agoda, and more
+- **Guest reviews** — overall rating, category scores, review snippets with author names, third-party ratings
+- **Hotel details** — amenities, address, check-in/out times, deal badges, hotel website link
+- **One-click booking** — opens the booking provider's website directly
+- **Price tracking** — email alerts when hotel prices change
+- **Save hotels** — bookmark hotels to your collection for later
+- **Smart sorting** — by price, rating, most reviewed, or relevance
+- **Site-aware UI** — welcome screen and example prompts change based on whether you're on Flights or Hotels
+- **Onboarding preferences** — customize defaults for both flights and hotels (budget, star rating, amenities)
+
 ---
 
 ## Installation
@@ -180,6 +197,22 @@ Keys are stored locally in `chrome.storage.local` and never leave your browser e
 | `explore_destinations`    | All pages    | Browse cheapest destinations on map                       |
 | `search_multi_city`       | All pages    | Multi-city itineraries (2-5 legs)                         |
 | `set_connecting_airports` | Results page | Exclude layover airports                                  |
+
+## Google Hotels Tools
+
+| Tool                 | Available on | Description                                                              |
+| -------------------- | ------------ | ------------------------------------------------------------------------ |
+| `search_hotels`      | All pages    | Search by location, dates, and guests                                    |
+| `set_search_options` | All pages    | Change check-in/check-out dates or guest count                           |
+| `get_results`        | Results page | Read hotel listings with prices, ratings, and deal badges                |
+| `set_filters`        | Results page | Filter by price, rating, class, amenities, brands, eco-certified, type   |
+| `sort_results`       | Results page | Sort by relevance, price, rating, or most reviewed                       |
+| `get_hotel_details`  | Results page | Full details: amenities, address, check-in/out, deals, website           |
+| `get_prices`         | Detail page  | Compare booking prices across providers (Booking.com, Expedia, etc.)     |
+| `get_reviews`        | Detail page  | Guest reviews, category ratings, and third-party review scores           |
+| `save_hotel`         | Results page | Save or unsave a hotel to your collection                                |
+| `book_hotel`         | Detail page  | Open a booking provider's website to complete the reservation            |
+| `track_hotel`        | Detail page  | Enable/disable price tracking alerts for a hotel                         |
 
 ---
 

@@ -48,51 +48,101 @@
     <!-- Onboarding overlay (first-time setup) -->
     <div id="onboarding-overlay" class="onboarding-overlay" style="display: none;">
         <h2>Welcome to WebMCPTools</h2>
-        <p class="onboarding-subtitle">Set your travel preferences so I can find flights faster.</p>
+        <p class="onboarding-subtitle">Set your preferences to get better results.</p>
 
-        <div class="pref-section">
-          <h3>What matters most?</h3>
-          <div class="pref-options" data-pref="priority">
-            <button class="pref-chip" data-value="price">Lowest price</button>
-            <button class="pref-chip" data-value="direct">Direct flights</button>
-            <button class="pref-chip" data-value="duration">Shortest trip</button>
-            <button class="pref-chip" data-value="schedule">Best schedule</button>
+        <!-- Flight Preferences -->
+        <div id="onboarding-flights" class="onboarding-group">
+          <h3 class="onboarding-group-title">Flight Preferences</h3>
+
+          <div class="pref-section">
+            <h3>What matters most?</h3>
+            <div class="pref-options" data-pref="priority">
+              <button class="pref-chip default" data-value="price">Lowest price</button>
+              <button class="pref-chip" data-value="direct">Direct flights</button>
+              <button class="pref-chip" data-value="duration">Shortest trip</button>
+              <button class="pref-chip" data-value="schedule">Best schedule</button>
+            </div>
+          </div>
+
+          <div class="pref-section">
+            <h3>Cabin class</h3>
+            <div class="pref-options" data-pref="cabin">
+              <button class="pref-chip default" data-value="economy">Economy</button>
+              <button class="pref-chip" data-value="premium_economy">Premium Economy</button>
+              <button class="pref-chip" data-value="business">Business</button>
+              <button class="pref-chip" data-value="first">First</button>
+            </div>
+          </div>
+
+          <div class="pref-section">
+            <h3>Bags</h3>
+            <div class="pref-options" data-pref="bags">
+              <button class="pref-chip default" data-value="carry_on">Carry-on only</button>
+              <button class="pref-chip" data-value="checked_1">1 checked bag</button>
+              <button class="pref-chip" data-value="checked_2">2 checked bags</button>
+            </div>
+          </div>
+
+          <div class="pref-section">
+            <h3>Stops</h3>
+            <div class="pref-options" data-pref="stops">
+              <button class="pref-chip default" data-value="any">Any</button>
+              <button class="pref-chip" data-value="nonstop">Nonstop only</button>
+              <button class="pref-chip" data-value="1_or_fewer">1 stop or fewer</button>
+            </div>
+          </div>
+
+          <div class="pref-section">
+            <h3>Trip type</h3>
+            <div class="pref-options" data-pref="tripType">
+              <button class="pref-chip default" data-value="round_trip">Round trip</button>
+              <button class="pref-chip" data-value="one_way">One way</button>
+            </div>
           </div>
         </div>
 
-        <div class="pref-section">
-          <h3>Cabin class</h3>
-          <div class="pref-options" data-pref="cabin">
-            <button class="pref-chip" data-value="economy">Economy</button>
-            <button class="pref-chip" data-value="premium_economy">Premium Economy</button>
-            <button class="pref-chip" data-value="business">Business</button>
-            <button class="pref-chip" data-value="first">First</button>
-          </div>
-        </div>
+        <!-- Hotel Preferences -->
+        <div id="onboarding-hotels" class="onboarding-group">
+          <h3 class="onboarding-group-title">Hotel Preferences</h3>
 
-        <div class="pref-section">
-          <h3>Bags</h3>
-          <div class="pref-options" data-pref="bags">
-            <button class="pref-chip" data-value="carry_on">Carry-on only</button>
-            <button class="pref-chip" data-value="checked_1">1 checked bag</button>
-            <button class="pref-chip" data-value="checked_2">2 checked bags</button>
+          <div class="pref-section">
+            <h3>Budget per night</h3>
+            <div class="pref-options" data-pref="hotelBudget">
+              <button class="pref-chip" data-value="under_100">Under $100</button>
+              <button class="pref-chip default" data-value="under_200">Under $200</button>
+              <button class="pref-chip" data-value="under_350">Under $350</button>
+              <button class="pref-chip" data-value="any">Any budget</button>
+            </div>
           </div>
-        </div>
 
-        <div class="pref-section">
-          <h3>Stops</h3>
-          <div class="pref-options" data-pref="stops">
-            <button class="pref-chip" data-value="any">Any</button>
-            <button class="pref-chip" data-value="nonstop">Nonstop only</button>
-            <button class="pref-chip" data-value="1_or_fewer">1 stop or fewer</button>
+          <div class="pref-section">
+            <h3>Minimum star rating</h3>
+            <div class="pref-options" data-pref="hotelClass">
+              <button class="pref-chip" data-value="any">Any</button>
+              <button class="pref-chip default" data-value="3_star">3-star+</button>
+              <button class="pref-chip" data-value="4_star">4-star+</button>
+              <button class="pref-chip" data-value="5_star">5-star</button>
+            </div>
           </div>
-        </div>
 
-        <div class="pref-section">
-          <h3>Trip type</h3>
-          <div class="pref-options" data-pref="tripType">
-            <button class="pref-chip" data-value="round_trip">Round trip</button>
-            <button class="pref-chip" data-value="one_way">One way</button>
+          <div class="pref-section">
+            <h3>Must-have amenities</h3>
+            <div class="pref-options multi-select" data-pref="hotelAmenities">
+              <button class="pref-chip default" data-value="wifi">Wi-Fi</button>
+              <button class="pref-chip" data-value="pool">Pool</button>
+              <button class="pref-chip" data-value="fitness">Gym</button>
+              <button class="pref-chip" data-value="parking">Parking</button>
+              <button class="pref-chip default" data-value="breakfast">Breakfast</button>
+              <button class="pref-chip" data-value="spa">Spa</button>
+            </div>
+          </div>
+
+          <div class="pref-section">
+            <h3>Booking flexibility</h3>
+            <div class="pref-options" data-pref="hotelCancel">
+              <button class="pref-chip default" data-value="free_cancel">Free cancellation</button>
+              <button class="pref-chip" data-value="any">Any policy</button>
+            </div>
           </div>
         </div>
 
@@ -116,8 +166,8 @@
         <div class="example-prompts">
           <button class="example-prompt-btn">Find me a flight to Cancun next month under $300</button>
           <button class="example-prompt-btn">Cheapest nonstop from SFO to NYC in April</button>
-          <button class="example-prompt-btn">Round trip JFK → London in May, business class</button>
-          <button class="example-prompt-btn">Is it a good time to book flights to Tokyo?</button>
+          <button class="example-prompt-btn">Find me a hotel in Tokyo under $150/night</button>
+          <button class="example-prompt-btn">Best rated hotels in Paris with a pool</button>
         </div>
       </div>
     </div>
@@ -192,7 +242,7 @@
       </section>
 
       <section class="settings-section">
-        <h3>Travel Preferences</h3>
+        <h3>Flight Preferences</h3>
         <div class="form-group">
           <label>Priority</label>
           <div class="pref-settings-chips" data-pref="priority">
@@ -232,6 +282,46 @@
           <div class="pref-settings-chips" data-pref="tripType">
             <button class="pref-chip" data-value="round_trip">Round trip</button>
             <button class="pref-chip" data-value="one_way">One way</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <h3>Hotel Preferences</h3>
+        <div class="form-group">
+          <label>Budget per night</label>
+          <div class="pref-settings-chips" data-pref="hotelBudget">
+            <button class="pref-chip" data-value="under_100">Under $100</button>
+            <button class="pref-chip" data-value="under_200">Under $200</button>
+            <button class="pref-chip" data-value="under_350">Under $350</button>
+            <button class="pref-chip" data-value="any">Any budget</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Minimum star rating</label>
+          <div class="pref-settings-chips" data-pref="hotelClass">
+            <button class="pref-chip" data-value="any">Any</button>
+            <button class="pref-chip" data-value="3_star">3-star+</button>
+            <button class="pref-chip" data-value="4_star">4-star+</button>
+            <button class="pref-chip" data-value="5_star">5-star</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Must-have amenities</label>
+          <div class="pref-settings-chips multi-select" data-pref="hotelAmenities">
+            <button class="pref-chip" data-value="wifi">Wi-Fi</button>
+            <button class="pref-chip" data-value="pool">Pool</button>
+            <button class="pref-chip" data-value="fitness">Gym</button>
+            <button class="pref-chip" data-value="parking">Parking</button>
+            <button class="pref-chip" data-value="breakfast">Breakfast</button>
+            <button class="pref-chip" data-value="spa">Spa</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Booking flexibility</label>
+          <div class="pref-settings-chips" data-pref="hotelCancel">
+            <button class="pref-chip" data-value="free_cancel">Free cancellation</button>
+            <button class="pref-chip" data-value="any">Any policy</button>
           </div>
         </div>
       </section>
