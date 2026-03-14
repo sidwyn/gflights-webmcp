@@ -12,7 +12,9 @@
   ],
   "host_permissions": [
     "https://www.google.com/travel/flights*",
-    "https://www.google.com/travel/explore*"
+    "https://www.google.com/travel/explore*",
+    "https://www.google.com/travel/search*",
+    "https://www.google.com/travel/hotels*"
   ],
   "background": {
     "service_worker": "background.js"

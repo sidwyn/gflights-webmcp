@@ -30,6 +30,20 @@ window.__webmcpRegistry = window.__webmcpRegistry || {
       tools: this.getAll(),
       sitePrompt: this.sitePrompt
     }).catch(() => {}); // Side panel may not be open
+    this._updateDebugElement();
+  },
+
+  _updateDebugElement() {
+    let el = document.getElementById('__webmcp-debug');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = '__webmcp-debug';
+      el.style.display = 'none';
+      document.documentElement.appendChild(el);
+    }
+    el.dataset.tools = JSON.stringify(this.getAll());
+    el.dataset.toolCount = Object.keys(this.tools).length;
+    el.dataset.sitePrompt = this.sitePrompt ? 'set' : 'none';
   }
 };
 
@@ -48,6 +62,36 @@ function getPageContext() {
   }
   return ctx;
 }
+
+// Debug bridge: reload extension from main world
+document.addEventListener('__webmcp_reload', () => {
+  chrome.runtime.sendMessage({ type: 'RELOAD_EXTENSION' }).catch(() => {});
+});
+
+// Debug bridge: allow main world to execute tools via DOM events
+document.addEventListener('__webmcp_exec', (e) => {
+  try {
+    const { toolName, args, requestId } = JSON.parse(e.detail);
+    const tool = window.__webmcpRegistry.tools[toolName];
+    if (!tool) {
+      document.dispatchEvent(new CustomEvent('__webmcp_result', {
+        detail: JSON.stringify({ requestId, error: `Tool "${toolName}" not found` })
+      }));
+      return;
+    }
+    tool.execute(args || {}).then(result => {
+      document.dispatchEvent(new CustomEvent('__webmcp_result', {
+        detail: JSON.stringify({ requestId, result })
+      }));
+    }).catch(err => {
+      document.dispatchEvent(new CustomEvent('__webmcp_result', {
+        detail: JSON.stringify({ requestId, error: err.message })
+      }));
+    });
+  } catch (err) {
+    // Malformed event — ignore
+  }
+});
 
 // Listen for messages from side panel
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

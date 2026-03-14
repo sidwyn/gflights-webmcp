@@ -216,15 +216,38 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // ── Preference Chips (shared logic for onboarding + settings) ─────────
-  function initPrefChips(container, savedPrefs) {
+  function initPrefChips(container, savedPrefs, applyDefaults = false) {
     container.querySelectorAll('[data-pref]').forEach(group => {
       const key = group.dataset.pref;
+      const isMulti = group.classList.contains('multi-select');
       const savedValue = savedPrefs[key];
+
       group.querySelectorAll('.pref-chip').forEach(chip => {
-        if (chip.dataset.value === savedValue) chip.classList.add('selected');
+        // Restore saved state
+        if (isMulti) {
+          const savedArr = Array.isArray(savedValue) ? savedValue : [];
+          if (savedArr.includes(chip.dataset.value)) {
+            chip.classList.add('selected');
+          } else if (applyDefaults && !savedValue && chip.classList.contains('default')) {
+            chip.classList.add('selected');
+          }
+        } else {
+          if (chip.dataset.value === savedValue) {
+            chip.classList.add('selected');
+          } else if (applyDefaults && !savedValue && chip.classList.contains('default')) {
+            chip.classList.add('selected');
+          }
+        }
+
         chip.addEventListener('click', () => {
-          group.querySelectorAll('.pref-chip').forEach(c => c.classList.remove('selected'));
-          chip.classList.add('selected');
+          if (isMulti) {
+            // Multi-select: toggle individual chip
+            chip.classList.toggle('selected');
+          } else {
+            // Single-select: deselect others
+            group.querySelectorAll('.pref-chip').forEach(c => c.classList.remove('selected'));
+            chip.classList.add('selected');
+          }
         });
       });
     });
@@ -234,8 +257,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const prefs = {};
     container.querySelectorAll('[data-pref]').forEach(group => {
       const key = group.dataset.pref;
-      const selected = group.querySelector('.pref-chip.selected');
-      if (selected) prefs[key] = selected.dataset.value;
+      const isMulti = group.classList.contains('multi-select');
+      if (isMulti) {
+        const selected = Array.from(group.querySelectorAll('.pref-chip.selected'));
+        prefs[key] = selected.map(c => c.dataset.value);
+      } else {
+        const selected = group.querySelector('.pref-chip.selected');
+        if (selected) prefs[key] = selected.dataset.value;
+      }
     });
     return prefs;
   }
@@ -258,7 +287,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const onboarding = document.getElementById('onboarding-overlay');
   if (onboarding && !saved.onboardingDone) {
     onboarding.style.display = '';
-    initPrefChips(onboarding, {});
+    initPrefChips(onboarding, {}, true); // applyDefaults = true for onboarding
 
     document.getElementById('onboarding-save-btn').addEventListener('click', async () => {
       const prefs = readPrefChips(onboarding);
